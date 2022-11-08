@@ -241,8 +241,18 @@ export function downloadSelectedArea(node, points, width, height) {
   domtoimage.toPng(node).then((data) => {
     const image = new Image();
     image.onload = () => {
-      context.drawImage(image, 0, 0);
+      const [p1, p2, p3, p4] = points;
+      context.moveTo(p1.x, p1.y);
+      context.beginPath();
+      context.lineTo(p2.x, p2.y);
+      context.lineTo(p3.x, p3.y);
+      context.lineTo(p4.x, p4.y);
+      context.lineTo(p1.x, p1.y);
+      context.closePath();
 
+      context.clip();
+
+      context.drawImage(image, 0, 0);
       const data = context.getImageData(minX, minY, w, h);
       context.clearRect(0, 0, downloadCanvas.width, downloadCanvas.height);
       downloadCanvas.width = w;
