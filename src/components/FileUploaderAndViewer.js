@@ -83,7 +83,7 @@ export default function FileUploaderAndViewer() {
           setShowSelection(true);
         } else {
           setShowChooser(true);
-          view.current.innerHTML = `<img id="img-internal" src="${image.src}" /><canvas id="canvas-internal" width="${image.width}" height="${image.height}" class="position-absolute" style="cursor: cell"></canvas>`;
+          view.current.innerHTML = `<img class="position-absolute" id="img-internal" src="${image.src}" /><canvas id="canvas-internal" width="${image.width}" height="${image.height}" class="position-absolute" style="cursor: cell"></canvas>`;
           const canvas = document.getElementById("canvas-internal");
           drawOnCanvasUsingMouseEvents(canvas, (points) => {
             setPoints(points);
