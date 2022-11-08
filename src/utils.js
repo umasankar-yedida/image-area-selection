@@ -48,7 +48,7 @@ export function draggableElement(element, parentElement) {
   function dragUp() {
     document.onmousemove = null;
     document.onmouseup = null;
-    element.style.cursor = "pointer";
+    element.style.cursor = "grab";
   }
 }
 
