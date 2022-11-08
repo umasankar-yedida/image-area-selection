@@ -6,10 +6,12 @@ import {
   Slider,
   Snackbar,
   Switch,
+  Tooltip,
   Typography,
 } from "@material-ui/core";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
+  downloadSelectedArea,
   draggableElement,
   drawOnCanvasUsingMouseEvents,
   getPoints,
@@ -40,6 +42,8 @@ export default function SelectImageArea({
 }) {
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [percentage, setPercentage] = useState(100);
+
+  const [showErrorSnackbar, setShowErrorSnackbar] = useState(null);
 
   const [checked, setChecked] = useState(false);
   const [points, setPoints] = useState([]);
@@ -72,6 +76,7 @@ export default function SelectImageArea({
       drag.style.top = 0;
       drag.style.left = 0;
     }
+    setPoints([]);
   }, [percentage]);
 
   useLayoutEffect(() => {
@@ -83,10 +88,19 @@ export default function SelectImageArea({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (checked) {
+      setPoints([]);
       dragRef.current.style.display = "none";
-      drawOnCanvasUsingMouseEvents(canvas, (points) => {
-        setPoints(points);
-      });
+      drawOnCanvasUsingMouseEvents(
+        canvas,
+        (points) => {
+          // onRegionSelected callback
+          setPoints(points);
+        },
+        () => {
+          // onStart selecting region callback
+          setPoints([]);
+        }
+      );
 
       return () => {
         canvas.onmousedown = null;
@@ -178,15 +192,47 @@ export default function SelectImageArea({
               >
                 Go back to upload
               </Button>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={checked}
-                    onChange={(e) => setChecked(e.target.checked)}
-                  />
+              {checked && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    if (points.length !== 4) {
+                      setShowErrorSnackbar("Select the region!");
+                      setTimeout(() => {
+                        setShowErrorSnackbar(null);
+                      }, 10000);
+                      return;
+                    }
+
+                    downloadSelectedArea(
+                      parentRef.current,
+                      points,
+                      canvasRef.current.width,
+                      canvasRef.current.height
+                    );
+                  }}
+                >
+                  Download selected region
+                </Button>
+              )}
+              <Tooltip
+                title={
+                  <Typography variant="h6">
+                    Choose 4 points on the image and press Esc to re-select
+                  </Typography>
                 }
-                label="Select Points"
-              />
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={checked}
+                      onChange={(e) => setChecked(e.target.checked)}
+                    />
+                  }
+                  label="Select Region"
+                />
+              </Tooltip>
             </Grid>
           </Grid>
         </Grid>
@@ -210,6 +256,9 @@ export default function SelectImageArea({
             </div>
           }
         />
+      )}
+      {showErrorSnackbar && (
+        <Snackbar open={true} message={showErrorSnackbar} />
       )}
     </>
   );

@@ -4,7 +4,7 @@ import ReactItemsCarousel from "react-items-carousel";
 import image1 from "../image-1.png";
 import ImageCard from "./ImageCard";
 
-export default function ChooseImages({ handleBack }) {
+export default function ChooseImages({ handleBack, points, handleDownload }) {
   const [active, setActive] = useState(0);
 
   return (
@@ -40,6 +40,7 @@ export default function ChooseImages({ handleBack }) {
         className="column"
         style={{
           alignItems: "flex-end",
+          gap: 10,
         }}
       >
         <Button
@@ -52,6 +53,18 @@ export default function ChooseImages({ handleBack }) {
         >
           Confirm selection
         </Button>
+        {points.length === 4 && (
+          <Button
+            variant="contained"
+            color="primary"
+            style={{ width: 300 }}
+            onClick={() => {
+              handleDownload();
+            }}
+          >
+            Download selected region
+          </Button>
+        )}
       </div>
     </div>
   );

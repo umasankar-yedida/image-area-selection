@@ -1,27 +1,22 @@
-import {
-  CircularProgress,
-  Grid,
-  Snackbar,
-  Typography,
-} from "@material-ui/core";
+import { CircularProgress, Grid, Typography } from "@material-ui/core";
 import { CloudUpload } from "@material-ui/icons";
 import React, { useEffect, useRef, useState } from "react";
-import { drawOnCanvasUsingMouseEvents, getPoints } from "../utils";
+import { downloadSelectedArea, drawOnCanvasUsingMouseEvents } from "../utils";
 import ChooseImages from "./ChooseImages";
 import SelectImageArea from "./SelectImageArea";
 
 export default function FileUploaderAndViewer() {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState(null);
-  const [showSelection, setShowSelection] = useState(false);
-  const [showChooser, setShowChooser] = useState(false);
+  const [showSelection, setShowSelection] = useState(false); // rectangualr flow
+  const [showChooser, setShowChooser] = useState(false); // square image flow
   const [loading, setLoading] = useState(false);
   const [imageData, setImageData] = useState(false);
 
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
 
-  const [showSnackbar, setShowSnackbar] = useState(null);
+  const [points, setPoints] = useState([]);
 
   const fileRef = useRef();
   const parent = useRef();
@@ -88,13 +83,10 @@ export default function FileUploaderAndViewer() {
           setShowSelection(true);
         } else {
           setShowChooser(true);
-          view.current.innerHTML = `<img src="${image.src}" /><canvas id="canvas-internal" width="${image.width}" height="${image.height}" class="position-absolute" style="cursor: cell"></canvas>`;
+          view.current.innerHTML = `<img id="img-internal" src="${image.src}" /><canvas id="canvas-internal" width="${image.width}" height="${image.height}" class="position-absolute" style="cursor: cell"></canvas>`;
           const canvas = document.getElementById("canvas-internal");
           drawOnCanvasUsingMouseEvents(canvas, (points) => {
-            setShowSnackbar(points);
-            setTimeout(() => {
-              setShowSnackbar(null);
-            }, 3000);
+            setPoints(points);
           });
         }
         setLoading(false);
@@ -178,7 +170,16 @@ export default function FileUploaderAndViewer() {
                   setImageData(null);
                   view.current.innerHTML = "";
                 }}
-                imageData={imageData}
+                points={points}
+                handleDownload={() => {
+                  const newImg = document.getElementById("img-internal");
+                  downloadSelectedArea(
+                    newImg,
+                    points,
+                    newImg.width,
+                    newImg.height
+                  );
+                }}
               />
             </Grid>
           )}
@@ -195,17 +196,6 @@ export default function FileUploaderAndViewer() {
             setShowChooser(false);
             setImageData(null);
           }}
-        />
-      )}
-      {showSnackbar && (
-        <Snackbar
-          open={true}
-          autoHideDuration={3000}
-          message={
-            <div className="column">
-              <Typography>Co-ordinates: {getPoints(showSnackbar)}</Typography>
-            </div>
-          }
         />
       )}
     </>

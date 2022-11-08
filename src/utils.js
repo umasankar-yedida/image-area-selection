@@ -1,3 +1,5 @@
+import domtoimage from "dom-to-image";
+
 export function draggableElement(element, parentElement) {
   let left = 0;
   let top = 0;
@@ -52,7 +54,11 @@ export function draggableElement(element, parentElement) {
   }
 }
 
-export function drawOnCanvasUsingMouseEvents(canvas, onRegionSelected) {
+export function drawOnCanvasUsingMouseEvents(
+  canvas,
+  onRegionSelected,
+  onStart
+) {
   canvas.style.cursor = "cell";
 
   const context = canvas.getContext("2d");
@@ -64,12 +70,17 @@ export function drawOnCanvasUsingMouseEvents(canvas, onRegionSelected) {
   function onMouseDown(e) {
     if (points.length === 4) {
       // we have reached the limit
-      onRegionSelected(points);
+      onRegionSelected(points); // callback
       drawGrid();
 
       start = false;
       points = [];
+      canvas.onmousemove = null;
       return;
+    }
+
+    if (points.length === 0 && onStart) {
+      onStart();
     }
 
     current = {
@@ -78,6 +89,7 @@ export function drawOnCanvasUsingMouseEvents(canvas, onRegionSelected) {
     };
     points.push(current);
     start = true;
+    canvas.onmousemove = onMouseMove;
   }
 
   function onMouseMove(e) {
@@ -165,8 +177,19 @@ export function drawOnCanvasUsingMouseEvents(canvas, onRegionSelected) {
     }
   }
 
-  canvas.onmousemove = onMouseMove;
   canvas.onmousedown = onMouseDown;
+
+  function onKeyUp(e) {
+    if (e.code === "Escape") {
+      // Clean-up
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.onmousemove = null;
+      points = [];
+      start = false;
+    }
+  }
+
+  document.onkeyup = onKeyUp;
 }
 
 export const getPoints = (points) => {
@@ -181,3 +204,52 @@ export const getPoints = (points) => {
 
   return data.join(", ");
 };
+
+export function downloadSelectedArea(node, points, width, height) {
+  let minX = 1000000;
+  let minY = 1000000;
+  let maxX = 0;
+  let maxY = 0;
+
+  points.forEach((point) => {
+    minX = Math.min(point.x, minX);
+    minY = Math.min(point.y, minY);
+    maxX = Math.max(point.x, maxX);
+    maxY = Math.max(point.y, maxY);
+  });
+
+  const h = maxY - minY;
+  const w = maxX - minX;
+
+  const downloadCanvas = document.createElement("canvas");
+  const context = downloadCanvas.getContext("2d");
+
+  function download(canvas) {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL();
+    a.download = "selected.png";
+    a.click();
+
+    // Open in new TAB and display the image in it
+    const newTab = window.open();
+    newTab.document.body.innerHTML = `<img src=${canvas.toDataURL()} />`;
+  }
+
+  downloadCanvas.width = width;
+  downloadCanvas.height = height;
+
+  domtoimage.toPng(node).then((data) => {
+    const image = new Image();
+    image.onload = () => {
+      context.drawImage(image, 0, 0);
+
+      const data = context.getImageData(minX, minY, w, h);
+      context.clearRect(0, 0, downloadCanvas.width, downloadCanvas.height);
+      downloadCanvas.width = w;
+      downloadCanvas.height = h;
+      context.putImageData(data, 0, 0);
+      download(downloadCanvas);
+    };
+    image.src = data;
+  });
+}
