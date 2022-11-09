@@ -68,10 +68,19 @@ export function drawOnCanvasUsingMouseEvents(
   let start = false;
 
   function onMouseDown(e) {
-    if (points.length === 4) {
+    current = {
+      x: e.offsetX,
+      y: e.offsetY,
+    };
+
+    if (points.length === 3) {
+      // draw line between last point and the first point
+      drawPoint(points[0].x, points[0].y);
+      points.push(current);
+
       // we have reached the limit
       onRegionSelected(points); // callback
-      drawGrid();
+      // drawGrid();
 
       start = false;
       points = [];
@@ -82,11 +91,6 @@ export function drawOnCanvasUsingMouseEvents(
     if (points.length === 0 && onStart) {
       onStart();
     }
-
-    current = {
-      x: e.offsetX,
-      y: e.offsetY,
-    };
     points.push(current);
     start = true;
     canvas.onmousemove = onMouseMove;
@@ -118,7 +122,7 @@ export function drawOnCanvasUsingMouseEvents(
     });
   }
 
-  function drawPoint(x, y, width = 3) {
+  function drawPoint(x, y, width = 2) {
     context.strokeStyle = "#ff0000";
     context.lineWidth = width;
     context.lineTo(x, y);
