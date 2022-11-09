@@ -54,6 +54,60 @@ export function draggableElement(element, parentElement) {
   }
 }
 
+function drawLineTo(context, x, y, width = 2) {
+  context.strokeStyle = "#ff0000";
+  context.lineWidth = width;
+  context.lineTo(x, y);
+  context.stroke();
+}
+
+function drawGrid(context, points) {
+  // FIXME: Revisit this logic and properly determine horizontal & vertical lines
+  let horizontal = [
+    [points[0], points[1]],
+    [points[3], points[2]],
+  ];
+  let vertical = [
+    [points[0], points[3]],
+    [points[1], points[2]],
+  ];
+
+  drawLines(context, horizontal[0], horizontal[1]);
+  drawLines(context, vertical[0], vertical[1]);
+}
+
+function drawLines(context, l1, l2) {
+  const [p1, p2] = l1;
+  const [p3, p4] = l2;
+
+  const np1 = {
+    x: (p1.x + p2.x) / 2,
+    y: (p1.y + p2.y) / 2,
+  };
+  const np2 = {
+    x: (p3.x + p4.x) / 2,
+    y: (p3.y + p4.y) / 2,
+  };
+
+  context.moveTo(np1.x, np1.y);
+  drawLineTo(context, np2.x, np2.y, 1);
+
+  // check if there is enough space between p1 - np1 & p3 - np2
+  if (
+    (Math.abs(p1.x - np1.x) > 80 && Math.abs(p3.x - np2.x) > 80) ||
+    (Math.abs(p1.y - np1.y) > 80 && Math.abs(p3.y - np2.y) > 80)
+  ) {
+    drawLines(context, [p1, np1], [p3, np2]);
+  }
+  // check if there is enough space between p2 - np1 & p4 - np2
+  if (
+    (Math.abs(p2.x - np1.x) > 80 && Math.abs(p4.x - np2.x) > 80) ||
+    (Math.abs(p2.y - np1.y) > 80 && Math.abs(p4.y - np2.y) > 80)
+  ) {
+    drawLines(context, [p2, np1], [p4, np2]);
+  }
+}
+
 export function drawOnCanvasUsingMouseEvents(
   canvas,
   onStart,
@@ -75,12 +129,12 @@ export function drawOnCanvasUsingMouseEvents(
 
     if (points.length === 3) {
       // draw line between last point and the first point
-      drawPoint(points[0].x, points[0].y);
+      drawLineTo(context, points[0].x, points[0].y);
       points.push(current);
 
       // we have reached the limit
       onRegionSelected(points); // callback
-      // drawGrid();
+      drawGrid(context, points);
 
       start = false;
       points = [];
@@ -102,7 +156,7 @@ export function drawOnCanvasUsingMouseEvents(
     }
 
     redrawPoints();
-    drawPoint(e.offsetX, e.offsetY);
+    drawLineTo(context, e.offsetX, e.offsetY);
   }
 
   function redrawPoints() {
@@ -118,67 +172,8 @@ export function drawOnCanvasUsingMouseEvents(
 
     points.forEach((point, index) => {
       if (index === 0) return;
-      drawPoint(point.x, point.y);
+      drawLineTo(context, point.x, point.y);
     });
-  }
-
-  function drawPoint(x, y, width = 2) {
-    context.strokeStyle = "#ff0000";
-    context.lineWidth = width;
-    context.lineTo(x, y);
-    context.stroke();
-  }
-
-  function drawGrid() {
-    // FIXME: Revisit this logic and properly determine horizontal & vertical lines
-    let horizontal = [
-      [points[0], points[1]],
-      [points[3], points[2]],
-    ];
-    let vertical = [
-      [points[0], points[3]],
-      [points[1], points[2]],
-    ];
-
-    drawLines(horizontal[0], horizontal[1], true);
-    drawLines(vertical[0], vertical[1], false);
-  }
-
-  function drawLines(l1, l2, isHorizontal) {
-    const [p1, p2] = l1;
-    const [p3, p4] = l2;
-
-    const np1 = {
-      x: (p1.x + p2.x) / 2,
-      y: (p1.y + p2.y) / 2,
-    };
-    const np2 = {
-      x: (p3.x + p4.x) / 2,
-      y: (p3.y + p4.y) / 2,
-    };
-
-    context.moveTo(np1.x, np1.y);
-    drawPoint(np2.x, np2.y, 1);
-
-    if (isHorizontal) {
-      // check if there is enough space between p1 - np1 & p3 - np2
-      if (Math.abs(p1.x - np1.x) > 80 && Math.abs(p3.x - np2.x) > 80) {
-        drawLines([p1, np1], [p3, np2], true);
-      }
-      // check if there is enough space between p2 - np1 & p4 - np2
-      if (Math.abs(p2.x - np1.x) > 80 && Math.abs(p4.x - np2.x) > 80) {
-        drawLines([p2, np1], [p4, np2], true);
-      }
-    } else {
-      // check if there is enough space between p1 - np1 & p3 - np2
-      if (Math.abs(p1.y - np1.y) > 80 && Math.abs(p3.y - np2.y) > 80) {
-        drawLines([p1, np1], [p3, np2], false);
-      }
-      // check if there is enough space between p2 - np1 & p4 - np2
-      if (Math.abs(p2.y - np1.y) > 80 && Math.abs(p4.y - np2.y) > 80) {
-        drawLines([p2, np1], [p4, np2], false);
-      }
-    }
   }
 
   canvas.onmousedown = onMouseDown;
@@ -280,19 +275,32 @@ export function drawRectsInCanvasUsingMouseEvents(
 
   function onMouseDown(e) {
     if (current) {
-      const points = [];
-      const { x: x1, y: y1 } = current;
-      const { offsetX: x2, offsetY: y2 } = e;
+      let points = [];
+      let { x: x1, y: y1 } = current;
+      let { offsetX: x2, offsetY: y2 } = e;
 
       const w = Math.abs(x1 - x2);
       const h = Math.abs(y1 - y2);
 
+      drawRect(e);
+
+      let isHigher = x1 > x2 || y1 > y2;
+      if (isHigher) {
+        let t = x1;
+        x1 = x2;
+        x2 = t;
+        t = y1;
+        y1 = y2;
+        y2 = t;
+      }
       points.push(
-        current,
+        { x: x1, y: y1 },
         { x: x1 + w, y: y1 },
         { x: x2, y: y2 },
         { x: x1, y: y1 + h }
       );
+
+      drawGrid(context, points);
 
       if (onFinish) {
         onFinish(points);
@@ -315,12 +323,17 @@ export function drawRectsInCanvasUsingMouseEvents(
   }
 
   function onMouseMove(e) {
+    drawRect(e);
+  }
+
+  function drawRect(e) {
+    const { offsetX: x2, offsetY: y2 } = e;
     context.clearRect(0, 0, canvas.width, canvas.height);
+    context.beginPath();
     context.strokeStyle = "red";
-    context.lineWidth = 5;
+    context.lineWidth = 3;
 
     const { x: x1, y: y1 } = current;
-    const { offsetX: x2, offsetY: y2 } = e;
 
     const w = Math.abs(x1 - x2);
     const h = Math.abs(y1 - y2);
