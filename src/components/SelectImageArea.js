@@ -14,6 +14,7 @@ import {
   downloadSelectedArea,
   draggableElement,
   drawOnCanvasUsingMouseEvents,
+  drawRectsInCanvasUsingMouseEvents,
   getPoints,
 } from "../utils";
 
@@ -47,6 +48,8 @@ export default function SelectImageArea({
 
   const [checked, setChecked] = useState(false);
   const [points, setPoints] = useState([]);
+
+  const [polygonOrRectSelection, setPolygonOrRectSelection] = useState(true);
 
   const dragRef = useRef(null);
   const parentRef = useRef(null);
@@ -90,7 +93,10 @@ export default function SelectImageArea({
     if (checked) {
       setPoints([]);
       dragRef.current.style.display = "none";
-      drawOnCanvasUsingMouseEvents(
+      const draw = polygonOrRectSelection
+        ? drawOnCanvasUsingMouseEvents
+        : drawRectsInCanvasUsingMouseEvents;
+      draw(
         canvas,
         () => {
           // onStart selecting region callback
@@ -113,7 +119,7 @@ export default function SelectImageArea({
       context.clearRect(0, 0, canvas.width, canvas.height);
       canvas.style.cursor = "default";
     }
-  }, [checked]);
+  }, [checked, polygonOrRectSelection]);
 
   return (
     <>
@@ -235,6 +241,31 @@ export default function SelectImageArea({
                   label="Select Region"
                 />
               </Tooltip>
+              {checked && (
+                <Tooltip
+                  title={
+                    <Typography variant="h6">
+                      Toggle between free form and rectangular region selection
+                    </Typography>
+                  }
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={polygonOrRectSelection}
+                        onChange={(e) =>
+                          setPolygonOrRectSelection(e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      polygonOrRectSelection
+                        ? "Polygon region selection"
+                        : "Rectangular region selection"
+                    }
+                  />
+                </Tooltip>
+              )}
             </Grid>
           </Grid>
         </Grid>
