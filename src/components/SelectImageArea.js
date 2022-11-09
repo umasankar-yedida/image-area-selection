@@ -57,8 +57,8 @@ export default function SelectImageArea({
   useEffect(() => {
     const image = parentRef.current;
     // re-calculate the width and height based on the percentage
-    const w = Math.max(512, width * (percentage / 100.0));
-    const h = Math.max(512, height * (percentage / 100.0));
+    const w = Math.max(576, width * (percentage / 100.0));
+    const h = Math.max(576, height * (percentage / 100.0));
     image.style.width = w + "px";
     image.style.height = h + "px";
 
