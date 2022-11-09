@@ -220,7 +220,8 @@ export default function SelectImageArea({
               <Tooltip
                 title={
                   <Typography variant="h6">
-                    Choose 4 points on the image and press Esc to re-select
+                    Choose 4 points on the image, you can also press Esc to
+                    re-select
                   </Typography>
                 }
               >
