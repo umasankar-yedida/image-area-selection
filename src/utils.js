@@ -263,3 +263,80 @@ export function downloadSelectedArea(node, points, width, height) {
     image.src = data;
   });
 }
+
+export function drawRectsInCanvasUsingMouseEvents(
+  canvas,
+  onStart = () => null,
+  onFinish = () => null
+) {
+  let current = null;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#ff0000";
+  canvas.style.cursor = "cell";
+
+  function onMouseDown(e) {
+    if (current) {
+      const points = [];
+      const { x: x1, y: y1 } = current;
+      const { offsetX: x2, offsetY: y2 } = e;
+
+      const w = Math.abs(x1 - x2);
+      const h = Math.abs(y1 - y2);
+
+      points.push(
+        current,
+        { x: x1 + w, y: y1 },
+        { x: x2, y: y2 },
+        { x: x1, y: y1 + h }
+      );
+
+      if (onFinish) {
+        onFinish(points);
+      }
+
+      canvas.onmousemove = null;
+      current = null;
+      return;
+    }
+
+    current = {
+      x: e.offsetX,
+      y: e.offsetY,
+    };
+    canvas.onmousemove = onMouseMove;
+
+    if (onStart) {
+      onStart();
+    }
+  }
+
+  function onMouseMove(e) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = "red";
+    context.lineWidth = 5;
+
+    const { x: x1, y: y1 } = current;
+    const { offsetX: x2, offsetY: y2 } = e;
+
+    const w = Math.abs(x1 - x2);
+    const h = Math.abs(y1 - y2);
+
+    const x = Math.min(x1, x2);
+    const y = Math.min(y1, y2);
+
+    context.strokeRect(x, y, w, h);
+  }
+
+  function onKeyUp(e) {
+    if (e.code === "Escape") {
+      // Clean-up
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.onmousemove = null;
+      current = null;
+    }
+  }
+
+  document.onkeyup = onKeyUp;
+
+  canvas.onmousedown = onMouseDown;
+}
