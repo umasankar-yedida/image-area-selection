@@ -92,13 +92,13 @@ export default function SelectImageArea({
       dragRef.current.style.display = "none";
       drawOnCanvasUsingMouseEvents(
         canvas,
-        (points) => {
-          // onRegionSelected callback
-          setPoints(points);
-        },
         () => {
           // onStart selecting region callback
           setPoints([]);
+        },
+        (points) => {
+          // onRegionSelected callback
+          setPoints(points);
         }
       );
 

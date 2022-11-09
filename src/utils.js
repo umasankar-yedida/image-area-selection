@@ -56,8 +56,8 @@ export function draggableElement(element, parentElement) {
 
 export function drawOnCanvasUsingMouseEvents(
   canvas,
-  onRegionSelected,
-  onStart
+  onStart,
+  onRegionSelected
 ) {
   canvas.style.cursor = "cell";
 
