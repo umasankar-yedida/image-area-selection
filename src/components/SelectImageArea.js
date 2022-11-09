@@ -104,6 +104,7 @@ export default function SelectImageArea({
 
       return () => {
         canvas.onmousedown = null;
+        document.onkeyup = null;
       };
     } else {
       dragRef.current.style.display = "block";
